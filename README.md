@@ -55,7 +55,6 @@ python pom.py generate --config custom.config.json -o model.py  # use custom con
   "baseUrl": "https://example.com",
   "pages": [
     {
-      "path": "/register",
       "name": "register",
       "selectors": {
         "username": "#username",
@@ -65,7 +64,6 @@ python pom.py generate --config custom.config.json -o model.py  # use custom con
     },
 
     {
-      "path": "/login",
       "name": "login",
       "selectors": {
         "username": "#username",
