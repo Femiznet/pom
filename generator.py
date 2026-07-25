@@ -31,7 +31,7 @@ def _build_name_from_url(parsed_url, name):
     
     Args:
         parsed_url: a ParseResult from urllib.parse.urlparse
-        name: one of 'base', 'path', 'class', 'page'
+        name: one of 'base', 'class', 'page'
     
     Returns the requested string or raises if name is unrecognised.
     """
@@ -49,9 +49,6 @@ def _build_name_from_url(parsed_url, name):
         class_name = to_camel_case(raw_name)
         return class_name[0].upper() + class_name[1:]
     
-    if name == "page":
-        # use path as page name, fall back to 'home' for root
-        return parsed_url.path.strip('/').lower() or 'home'
 
     raise Exception(f"Unknown name type: '{name}'")
 
@@ -99,11 +96,9 @@ def generate_from_config(data):
     
     for page in pages:
         name = page['name']
-        path = page['path']
         selectors = page['selectors']
         
         lines.append(f"    class {name}:")
-        lines.append(f'        _path = "{path}"')
 
         # type annotations — tells VSCode each attribute is a Playwright Locator
         for key in selectors:
@@ -141,7 +136,6 @@ def generate_config(raw_url):
         "baseUrl": base_url,
         "pages": [
             {
-                "path": path,
                 "name": page_name,
                 "selectors": selectors
             }

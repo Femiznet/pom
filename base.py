@@ -15,7 +15,6 @@ class BasePom:
     """
     
     _base_url: str = ""       # set by generated subclass
-    _current_path: str = ""   # tracks current page to avoid redundant navigation
 
     def __init__(self, headless=False):
         # headless=False shows the browser window, useful for debugging
@@ -26,6 +25,9 @@ class BasePom:
         self._playwright = sync_playwright().start()
         self._browser = self._playwright.chromium.launch(headless=self._headless)
         self._page = self._browser.new_page()
+        if not self._base_url.strip():
+            raise Exception(f"Invalid base url: {self._base_url}")
+        self._page.goto(self._base_url)
         self._bind_locators()
         return self
     
@@ -52,13 +54,12 @@ class BasePom:
             section = getattr(self.__class__, section_name)
             if isinstance(section, type):  # only process inner classes
                 selectors = getattr(section, '_selectors', {})
-                path = getattr(section, '_path', None)
                 
                 for attr_name, selector in selectors.items():
-                    locator = self._make_locator(selector, path)
+                    locator = self._make_locator(selector)
                     setattr(section, attr_name, locator)
     
-    def _make_locator(self, selector, path):
+    def _make_locator(self, selector):
         """Create a NavLocator that navigates to path before any Playwright action.
         
         Navigation only happens if the current path differs from the target path,
@@ -68,10 +69,6 @@ class BasePom:
         
         class NavLocator:
             def __getattr__(self, name):
-                # navigate only if not already on this page
-                if path and pom._current_path != path:
-                    pom._page.goto(pom._base_url + path)
-                    pom._current_path = path
                 return getattr(pom._page.locator(selector), name)
         
         return NavLocator()
