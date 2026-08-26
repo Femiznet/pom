@@ -24,10 +24,14 @@ class BasePom:
         """Start Playwright, launch browser, and bind locators."""
         self._playwright = sync_playwright().start()
         self._browser = self._playwright.chromium.launch(headless=self._headless)
-        self._page = self._browser.new_page()
+        self._context = self._browser.new_context()
+        self._page = self._context.new_page()
+        self._context.on("page", lambda new_tab: new_tab.close() if new_tab != self._page else None)
+        
         if not self._base_url.strip():
             raise Exception(f"Invalid base url: {self._base_url}")
         self._page.goto(self._base_url)
+
         self._bind_locators()
         return self
     

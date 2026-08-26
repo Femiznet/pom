@@ -3,3 +3,5 @@ __pycache__/
 *.pyc
 pom.config.json
 *.py.bak
+.vscode/
+GITHUB_ACTIONS_GUIDE.md
