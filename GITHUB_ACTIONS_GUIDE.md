@@ -37,16 +37,13 @@ concurrency:
 
 `${{ ... }}` is a GitHub Actions expression. This creates a group for runs of the same workflow and branch. If several commits are pushed quickly, GitHub cancels an older run when a newer run replaces it, saving time and runner capacity.
 
-## Jobs and the Python matrix
+## The test job
 
 ```yaml
-strategy:
-  fail-fast: false
-  matrix:
-    python-version: ["3.9", "3.10", "3.11", "3.12"]
+python-version: "3.12"
 ```
 
-The matrix runs the same job once for each Python version. `fail-fast: false` lets all versions finish so a failure on one version does not hide failures on the others.
+The test workflow uses one current Python version to keep CI quick and dependable while the project is still developing. More versions can be added later after the project has a formal compatibility policy.
 
 `runs-on: ubuntu-latest` selects a temporary Linux runner. The project can still be developed on Windows; this workflow checks the most common server environment.
 
@@ -66,20 +63,11 @@ cache: pip
 cache-dependency-path: requirements.txt
 ```
 
-`setup-python` caches downloaded pip packages. The cache is refreshed when `requirements.txt` changes, which makes later workflow runs faster without changing which versions are installed.
-
-Playwright has two parts: the Python package and browser binaries. `pip install -r requirements.txt` installs the package, while:
-
-```bash
-python -m playwright install --with-deps chromium
-```
-
-installs Chromium and the Linux libraries it needs. The workflow does this even though the deterministic checks do not visit a website, so future browser-based tests have the required environment.
+`setup-python` caches downloaded pip packages. The cache is refreshed when `requirements.txt` changes, which makes later workflow runs faster without changing which versions are installed. The current workflow installs the Playwright Python package, but does not download Chromium because its checks do not open a browser. A browser can be added when a real browser test is ready.
 
 ## Checks performed
 
-- `python -m pip check` detects incompatible installed package requirements.
-- `python -m py_compile ...` parses every project script without running it. This catches syntax errors.
+- `python -m compileall` parses project scripts without running them. This catches syntax errors.
 - The import check confirms that `test.nkiri` and `test.main` are connected correctly and that their expected public names exist.
 - `python pom.py --help` confirms the CLI can start and register its commands.
 - `python pom.py generate ...` exercises the real generator using `pom.config.json`.
@@ -93,9 +81,13 @@ The generated `ci_generated.py` file is temporary CI output. It exists only duri
 
 The workflow therefore tests the code structure and generator deterministically. Run `python -m test.main` manually when you are authorized to access the site and want to perform the live test.
 
+## The Pylint workflow
+
+The separate Pylint workflow runs on Python 3.12 and reports code-quality findings. Its command ends with `|| true`, which means Pylint findings are visible in the log but do not block a push or pull request. This is a deliberate temporary choice for an early project: once the codebase has a Pylint policy, remove `|| true` and fix the reported findings incrementally.
+
 ## Reading the result
 
-- A green check means every matrix job completed successfully.
-- A red check means at least one step failed. Open the workflow run and select the failed Python version to see the command output.
-- A failure on only one Python version usually indicates a compatibility issue specific to that version.
-- A failure during browser installation usually indicates a Playwright or runner-environment issue, rather than a problem with the page-object code.
+- A green check means the test and lint jobs completed successfully.
+- A red check means at least one step failed. Open the workflow run and select the failed job to see the command output.
+- A failure during dependency installation usually points to a package or Python-version compatibility issue.
+- Pylint messages are advisory for now; a failed test step is the result that blocks the workflow.
