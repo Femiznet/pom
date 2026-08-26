@@ -37,6 +37,7 @@ jobs:
       - name: Test CLI and generated model
         run: |
           python pom.py --help
-          python pom.py generate --config pom.config.json --output ci_generated.py
+          python -c "import json; json.dump({'baseUrl': 'https://example.com', 'pages': [{'name': 'home', 'selectors': {'submit': '#submit'}}]}, open('ci_config.json', 'w'))"
+          python pom.py generate --config ci_config.json --output ci_generated.py
           python -m py_compile ci_generated.py
-          python -c "from ci_generated import Thenkiri; assert Thenkiri._base_url == 'https://thenkiri.com/'; print('Generator check passed')"
+          python -c "from ci_generated import Example; assert Example._base_url == 'https://example.com'; print('Generator check passed')"
