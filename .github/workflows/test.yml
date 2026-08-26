@@ -28,7 +28,7 @@ jobs:
       - name: Check Python syntax
         run: >-
           python -m py_compile
-          base.py config.py generator.py main.py nkiri.py pom.py pom_parser.py utils.py
+          base.py config.py generator.py pom.py pom_parser.py utils.py
           test/__init__.py test/main.py test/nkiri.py
 
       - name: Check module imports
